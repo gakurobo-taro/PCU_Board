@@ -47,6 +47,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+#define  USE_CAN
 
 /* USER CODE END EM */
 

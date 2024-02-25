@@ -21,12 +21,19 @@
 #include "main.h"
 #include "adc.h"
 #include "can.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "../../UserLib/board_task.hpp"
+
+#include <stdio.h>
+
+using namespace G24_STM32HAL;
 
 /* USER CODE END Includes */
 
@@ -58,7 +65,45 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan){
+	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::can.tx_interrupt_task();
+}
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan){
+	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::can.tx_interrupt_task();
+}
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan){
+	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::can.tx_interrupt_task();
+}
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::can.rx_interrupt_task();
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+//    if (htim == GPIOBoard::pwm_timer){
+//    	for(auto &io:GPIOBoard::IO){
+//    		io.update();
+//    	}
+//    	GPIOBoard::pin_interrupt_check();
+//    	GPIOBoard::LED_G.out_as_gpio(true);
+//    }else if(htim == GPIOBoard::monitor_timer){
+//    	GPIOBoard::LED_R.out_as_gpio(true);
+//    	GPIOBoard::monitor_task();
+//    }
+}
+
+extern "C" {
+int _write(int file, char *ptr, int len)
+	{
+		HAL_UART_Transmit(&huart2,(uint8_t *)ptr,len,100);
+		return len;
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -89,6 +134,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN_Init();
   MX_TIM17_Init();
   MX_ADC1_Init();
@@ -97,12 +143,10 @@ int main(void)
   MX_TIM16_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_ALL);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1,500);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2,500);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4,500);
+  PCUBoard::init();
 
-  HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,GPIO_PIN_SET);
+  HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,GPIO_PIN_RESET);
 
   /* USER CODE END 2 */
 
@@ -113,8 +157,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_GPIO_TogglePin(POWER_SD_GPIO_Port,POWER_SD_Pin);
-	  HAL_Delay(1000);
+	  PCUBoard::LED_B.out_as_gpio_toggle();
+	  printf("%d,%d\r\n",PCUBoard::adc_val[0],PCUBoard::adc_val[1]);
+	  HAL_Delay(100);
+
 
   }
   /* USER CODE END 3 */
@@ -128,7 +174,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -150,16 +195,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC12;
-  PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV1;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
