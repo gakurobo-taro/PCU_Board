@@ -85,16 +85,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-//    if (htim == GPIOBoard::pwm_timer){
-//    	for(auto &io:GPIOBoard::IO){
-//    		io.update();
-//    	}
-//    	GPIOBoard::pin_interrupt_check();
-//    	GPIOBoard::LED_G.out_as_gpio(true);
-//    }else if(htim == GPIOBoard::monitor_timer){
-//    	GPIOBoard::LED_R.out_as_gpio(true);
-//    	GPIOBoard::monitor_task();
-//    }
+    if (htim == PCUBoard::sound_control_timer){
+    	PCUBoard::LED_G.out_as_gpio_toggle();
+    	PCUBoard::buzzer.timer_interrupt_task();
+	}else if(htim == PCUBoard::monitor_timer){
+		PCUBoard::LED_R.out_as_gpio(true);
+		PCUBoard::monitor_task();
+	}
 }
 
 extern "C" {
