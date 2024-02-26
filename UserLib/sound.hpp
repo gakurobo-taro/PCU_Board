@@ -10,6 +10,7 @@
 
 #include "tim.h"
 #include <stdio.h>
+#include <array>
 
 namespace G24_STM32HAL::PCULib{
 
@@ -53,8 +54,9 @@ namespace G24_STM32HAL::PCULib{
     	A5 = 40909,
     	A5_ = 38613,
     	B5 = 36446,
-    };
 
+		END = 0xFFFFFFFF,
+    };
 
     struct Sound{
     	uint32_t sound = 0;
@@ -70,9 +72,7 @@ namespace G24_STM32HAL::PCULib{
 		const uint32_t ch;
 
 		Sound *playing_music = nullptr;
-		int music_length = 0;
-		int music_count = 0;
-
+		size_t music_count = 0;
 	public:
 		Buzzer(TIM_HandleTypeDef *_length_tim,TIM_HandleTypeDef *_buzzer_tim, uint32_t _ch)
 			:length_tim(_length_tim),buzzer_tim(_buzzer_tim),ch(_ch){}
@@ -91,11 +91,9 @@ namespace G24_STM32HAL::PCULib{
 			}
 		}
 
-		void play(Sound *music, size_t s_n){
-			playing_music = music;
+		void play(const Sound *music){
+			playing_music = const_cast<Sound*>(music);
 			music_count = 0;
-			music_length = s_n;
-
 			__HAL_TIM_SET_AUTORELOAD(length_tim,playing_music[music_count].length);
 			__HAL_TIM_SET_COUNTER(length_tim,0);
 			HAL_TIM_Base_Start_IT(length_tim);
@@ -105,20 +103,12 @@ namespace G24_STM32HAL::PCULib{
 			if(playing_music != nullptr){
 				tone(playing_music[music_count].sound);
 
-				if(music_count > music_length){
-					HAL_TIM_Base_Stop_IT(length_tim);
-					playing_music = nullptr;
-					return;
-				}
-
-				tone((int)playing_music[music_count].sound);
-
 				__HAL_TIM_SET_AUTORELOAD(length_tim,playing_music[music_count].length);
 				__HAL_TIM_SET_COUNTER(length_tim,0);
 
 				music_count ++;
 
-				if(music_count >= music_length){
+				if(playing_music[music_count].sound == (uint32_t)Scale::END){
 					playing_music = nullptr;
 				}
 			}else{

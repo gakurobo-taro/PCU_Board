@@ -155,10 +155,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  PCUBoard::LED_B.out_as_gpio_toggle();
-	  printf("%d,%d\r\n",PCUBoard::adc_val[0],PCUBoard::adc_val[1]);
+	  printf("%4.3f,%4.3f\r\n",PCUBoard::get_voltage(),PCUBoard::get_current());
 	  HAL_Delay(100);
-
-
   }
   /* USER CODE END 3 */
 }

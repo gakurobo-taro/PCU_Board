@@ -40,19 +40,37 @@ namespace G24_STM32HAL::PCUBoard{
 
 	inline auto can = CommonLib::CanComm<4,4>(&hcan,CAN_RX_FIFO0,CAN_FILTER_FIFO0,CAN_IT_RX_FIFO0_MSG_PENDING);
 
+	//ADC
 	inline uint16_t adc_val[2] = {0};
+	inline uint16_t current_sens_offset = 0;
+	auto get_voltage = []()->float{ return (float)adc_val[1]*11.0f*3.3f/4096.0f; };
+	auto get_current = []()->float{ return (float)(adc_val[0]-current_sens_offset)*3.3f/(0.015f*4096.0f); };
+
+	auto set_EMS = [](bool state) { return HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET); };
+	auto get_EMS_state = []()->bool{ return HAL_GPIO_ReadPin(EM_CHECK_GPIO_Port,EM_CHECK_Pin); };
 
 	void init(void){
 		LED_R.start();
 		LED_G.start();
 		LED_B.start();
 
-		buzzer.play(PCULib::SoundData::SOS, 18);
+		can.start();
+		can.set_filter_free(0);
 
+		HAL_ADCEx_Calibration_Start(&hadc1,ADC_SINGLE_ENDED);
 		HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_val, 2);
+
+		HAL_Delay(10);
+		for(int i = 0; i < 16; i++){
+			current_sens_offset += adc_val[0];
+			HAL_Delay(1);
+		}
+		current_sens_offset >>= 4;
+
+		buzzer.play(PCULib::SoundData::test);
 	}
 
-	//bool get_EMS_SW_state(void);
+	bool get_EMS_SW_state(void);
 
 	void monitor_task(void){
 
