@@ -86,7 +86,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == PCUBoard::sound_control_timer){
-    	PCUBoard::LED_G.out_as_gpio_toggle();
+    	PCUBoard::LED_G.out_as_gpio(true);
     	PCUBoard::buzzer.timer_interrupt_task();
 	}else if(htim == PCUBoard::monitor_timer){
 		PCUBoard::LED_R.out_as_gpio(true);
@@ -154,9 +154,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  PCUBoard::LED_B.out_as_gpio_toggle();
-	  printf("%4.3f,%4.3f\r\n",PCUBoard::get_voltage(),PCUBoard::get_current());
-	  HAL_Delay(100);
+	  PCUBoard::soft_emergency_stop_task();
+	  PCUBoard::emergency_stop_alert_task();
+	  PCUBoard::communication_task();
+	  PCUBoard::LED_R.out_as_gpio(false);
+	  PCUBoard::LED_G.out_as_gpio(false);
+	  PCUBoard::LED_B.out_as_gpio(false);
+
+//	  PCUBoard::LED_B.out_as_gpio_toggle();
+//	  printf("%4.3f,%4.3f\r\n",PCUBoard::get_voltage(),PCUBoard::get_current());
+//	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }

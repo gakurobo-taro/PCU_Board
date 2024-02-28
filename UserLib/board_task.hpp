@@ -31,6 +31,8 @@
 
 namespace G24_STM32HAL::PCUBoard{
 
+	inline constexpr uint8_t BOARD_ID = 0x0;
+
 	//peripherals
 	//TIMER/PWM
 	inline auto *sound_control_timer = &htim16;
@@ -80,7 +82,10 @@ namespace G24_STM32HAL::PCUBoard{
 	};
 
 	inline auto ems_trigger = EmergencyStopTrigger{};
-	inline auto set_soft_emergency_stop = [](bool state) {HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET); };
+	inline auto set_soft_emergency_stop = [](bool state) {
+		HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_RESET:GPIO_PIN_SET);
+		HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET);
+	};
 	inline auto get_soft_emergency_stop = []()->bool { return HAL_GPIO_ReadPin(POWER_SD_GPIO_Port,POWER_SD_Pin)?true:false;};
 	inline auto get_emergency_stop_state = []()->bool{ return HAL_GPIO_ReadPin(EM_CHECK_GPIO_Port,EM_CHECK_Pin); };
 
@@ -91,6 +96,7 @@ namespace G24_STM32HAL::PCUBoard{
 				|(is_under_voltage()?1<<3:0)
 				|(is_over_current()?1<<4:0);
 	};
+	inline uint8_t old_pcu_state = 0;
 
 	//timer control
 	inline auto set_monitor_period = [](uint16_t val){
@@ -106,11 +112,8 @@ namespace G24_STM32HAL::PCUBoard{
 		}
 	};
 	inline auto get_monitor_period = []()->uint16_t{
-		if(HAL_TIM_Base_GetState(monitor_timer) == HAL_TIM_STATE_BUSY){
-			return __HAL_TIM_GET_AUTORELOAD(monitor_timer);
-		}else{
-			return 0;
-		}
+		if(HAL_TIM_Base_GetState(monitor_timer) == HAL_TIM_STATE_BUSY)return __HAL_TIM_GET_AUTORELOAD(monitor_timer);
+		else return 0;
 	};
 
 	//monitor
@@ -132,7 +135,13 @@ namespace G24_STM32HAL::PCUBoard{
 
 	void init(void);
 
-	void main_data_proccess(void);
+	uint8_t read_board_id(void);
+
+	void soft_emergency_stop_task(void);
+
+	void emergency_stop_alert_task(void);
+
+	void communication_task(void);
 
 	void monitor_task(void);
 
