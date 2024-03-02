@@ -149,6 +149,8 @@ namespace G24_STM32HAL::PCUBoard{
 	void emergency_stop_alert_task(void);
 
 	void communication_task(void);
+	void execute_pcu_command(size_t board_id,const CommonLib::DataPacket &rx_data);
+	void execute_common_command(size_t board_id,const CommonLib::DataPacket &rx_data);
 
 	void monitor_task(void);
 

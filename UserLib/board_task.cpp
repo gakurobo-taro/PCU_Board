@@ -97,24 +97,64 @@ namespace G24_STM32HAL::PCUBoard{
 			CommonLib::DataConvert::decode_can_frame(rx_frame, rx_data);
 
 			if(rx_data.board_ID == BOARD_ID && rx_data.data_type == CommonLib::DataType::PCU_DATA){
-				if(rx_data.is_request){
-					CommonLib::CanFrame tx_frame;
-					auto writer = tx_frame.writer();
-
-					if(id_map.get(rx_data.register_ID, writer)){
-						tx_frame.id = rx_frame.id;
-						tx_frame.is_ext_id = true;
-						tx_frame.is_remote = false;
-
-						can.tx(tx_frame);
-					}
-				}else{
-					auto reader = rx_data.reader();
-					id_map.set(rx_data.register_ID, reader);
-				}
+				execute_pcu_command(BOARD_ID,rx_data);
+			}else if((BOARD_ID == rx_data.board_ID && rx_data.data_type == CommonLib::DataType::COMMON_DATA)
+					||(rx_data.data_type == CommonLib::DataType::COMMON_DATA_ENFORCE)){
+				execute_common_command(BOARD_ID,rx_data);
 			}
 		}
 	}
+	void execute_pcu_command(size_t board_id,const CommonLib::DataPacket &rx_data){
+		if(rx_data.is_request){
+			CommonLib::CanFrame tx_frame;
+			CommonLib::DataPacket tx_data;
+			auto writer = tx_frame.writer();
+
+			if(id_map.get(rx_data.register_ID, writer)){
+				tx_data.board_ID = board_id;
+				tx_data.data_type = CommonLib::DataType::PCU_DATA;
+				tx_data.priority = rx_data.priority;
+				tx_data.register_ID = rx_data.register_ID;
+
+				CommonLib::DataConvert::encode_can_frame(tx_data, tx_frame);
+
+				can.tx(tx_frame);
+			}
+		}else{
+			auto reader = rx_data.reader();
+			id_map.set(rx_data.register_ID, reader);
+		}
+	}
+	void execute_common_command(size_t board_id,const CommonLib::DataPacket &rx_data){
+		CommonLib::DataPacket tx_data;
+		CommonLib::CanFrame tx_frame;
+
+		switch((PCULib::CommonReg)rx_data.register_ID){
+		case PCULib::CommonReg::NOP:
+			break;
+		case PCULib::CommonReg::ID_REQEST:
+			if(rx_data.is_request){
+				tx_data.board_ID = board_id;
+				tx_data.data_type = CommonLib::DataType::COMMON_DATA;
+				tx_data.register_ID = (uint16_t)PCULib::CommonReg::ID_REQEST;
+				tx_data.writer().write<uint8_t>((uint8_t)CommonLib::DataType::PCU_DATA);
+				tx_data.priority = rx_data.priority;
+
+				CommonLib::DataConvert::encode_can_frame(tx_data,tx_frame);
+				can.tx(tx_frame);
+			}
+			break;
+		case PCULib::CommonReg::EMERGENCY_STOP:
+			set_soft_emergency_stop(true);
+			break;
+		case PCULib::CommonReg::RESET_EMERGENCY_STOP:
+			set_soft_emergency_stop(false);
+			break;
+		default:
+			break;
+		}
+	}
+
 	void monitor_task(void){
 		for(auto &map_element : id_map.accessors_map){
 			if(map_element.first < monitor.size()){

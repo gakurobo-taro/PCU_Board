@@ -11,6 +11,12 @@
 #include <stdint.h>
 
 namespace G24_STM32HAL::PCULib{
+	enum class CommonReg:uint16_t{
+		NOP,
+		ID_REQEST,
+		EMERGENCY_STOP = 0xE,
+		RESET_EMERGENCY_STOP = 0xF,
+	};
 	enum class PCUReg : uint16_t{
 		NOP,
 		PCU_STATE,
