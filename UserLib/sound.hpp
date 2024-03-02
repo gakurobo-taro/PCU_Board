@@ -71,7 +71,7 @@ namespace G24_STM32HAL::PCULib{
 		TIM_HandleTypeDef *buzzer_tim;
 		const uint32_t ch;
 
-		Sound *playing_music = nullptr;
+		const Sound *playing_music = nullptr;
 		size_t music_count = 0;
 	public:
 		Buzzer(TIM_HandleTypeDef *_length_tim,TIM_HandleTypeDef *_buzzer_tim, uint32_t _ch)
@@ -92,11 +92,15 @@ namespace G24_STM32HAL::PCULib{
 		}
 
 		void play(const Sound *music){
-			playing_music = const_cast<Sound*>(music);
+			playing_music = music;
 			music_count = 0;
 			__HAL_TIM_SET_AUTORELOAD(length_tim,playing_music[music_count].length);
 			__HAL_TIM_SET_COUNTER(length_tim,0);
 			HAL_TIM_Base_Start_IT(length_tim);
+		}
+
+		bool is_playing(void){
+			return playing_music!=nullptr?true:false;
 		}
 
 		void timer_interrupt_task(void){

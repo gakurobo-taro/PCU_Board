@@ -13,9 +13,6 @@ namespace G24_STM32HAL::PCUBoard{
 		LED_G.start();
 		LED_B.start();
 
-		can.start();
-		can.set_filter_free(0);
-
 		HAL_ADCEx_Calibration_Start(&hadc1,ADC_SINGLE_ENDED);
 		HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_val, 2);
 
@@ -26,16 +23,35 @@ namespace G24_STM32HAL::PCUBoard{
 		}
 		current_sens_offset >>= 4;
 
-		buzzer.play(PCULib::SoundData::test);
-
+		cell_n = estimate_battery_cell();
+		buzzer.play(PCULib::SoundData::start_theme.at(cell_n));
 		set_soft_emergency_stop(false);
+		while(buzzer.is_playing());
+
+		old_pcu_state = get_pcu_state();
+
+		can.start();
+		can.set_filter_free(0);
+	}
+
+	uint8_t estimate_battery_cell(void){
+		float voltage = get_voltage();
+		if(voltage<voltage_limit_low){
+			return 0;
+		}
+		for(int i = 1; i <= 6; i++){
+			if(voltage_limit_low*i<voltage && voltage<voltage_limit_high*i){
+				return i;
+			}
+		}
+		return 0;
 	}
 
 	void soft_emergency_stop_task(void){
 		if(get_pcu_state() & ems_trigger.get()){
 			set_soft_emergency_stop(true);
 		}else{
-			set_soft_emergency_stop(true);
+			set_soft_emergency_stop(false);
 		}
 	}
 
@@ -54,6 +70,20 @@ namespace G24_STM32HAL::PCUBoard{
 			CommonLib::CanFrame tx_frame;
 			CommonLib::DataConvert::encode_can_frame(tx_data, tx_frame);
 			can.tx(tx_frame);
+
+			if(is_over_voltage()){
+				buzzer.play(PCULib::SoundData::over_voltage_theme);
+			}else if(is_under_voltage()){
+				buzzer.play(PCULib::SoundData::under_voltage_theme);
+			}else if(is_over_current()){
+				buzzer.play(PCULib::SoundData::over_current_theme);
+			}else if(get_soft_emergency_stop()){
+				buzzer.play(PCULib::SoundData::soft_emergency_stop);
+			}else if(get_emergency_stop_state()){
+				buzzer.play(PCULib::SoundData::emergency_stop);
+			}else if(pcu_state==0){
+				buzzer.play(PCULib::SoundData::safe);
+			}
 		}
 
 		old_pcu_state = pcu_state;

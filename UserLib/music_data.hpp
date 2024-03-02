@@ -24,28 +24,69 @@ namespace G24_STM32HAL::PCULib::SoundData{
 			{Scale::END,0},
 	};
 
-	inline const Sound SOS[]={
-			{Scale::A4,100},
-			{Scale::OFF,100},
-			{Scale::A4,100},
-			{Scale::OFF,100},
-			{Scale::A4,100},
-			{Scale::OFF,100*3},
+	inline const Sound no_battery[] = {{Scale::C3,200},{Scale::C4,200},{Scale::C5,200},{Scale::END,0}};
+	inline const Sound cell1[] = {{Scale::C4,200},{Scale::END,0},};
+	inline const Sound cell2[] = {{Scale::C4,200},{Scale::D4,200},{Scale::END,0},};
+	inline const Sound cell3[] = {{Scale::C4,200},{Scale::D4,200},{Scale::E4,200},{Scale::END,0},};
+	inline const Sound cell4[] = {{Scale::C4,200},{Scale::D4,200},{Scale::E4,200},{Scale::F4,200},{Scale::END,0},};
+	inline const Sound cell5[] = {{Scale::C4,200},{Scale::D4,200},{Scale::E4,200},{Scale::F4,200},{Scale::G4,200},{Scale::END,0},};
+	inline const Sound cell6[] = {{Scale::C4,200},{Scale::D4,200},{Scale::E4,200},{Scale::F4,200},{Scale::G4,200},{Scale::A4,200},{Scale::END,0},};
 
-			{Scale::A4,100*3},
-			{Scale::OFF,100},
-			{Scale::A4,100*3},
-			{Scale::OFF,100},
-			{Scale::A4,100*3},
-			{Scale::OFF,100*3},
+	inline const auto start_theme = std::array<const Sound*,7>{
+			no_battery,cell1,cell2,cell3,cell4,cell5,cell6
+	};
 
-			{Scale::A4,100},
+	inline const Sound emergency_stop[]={
+			{Scale::C5,500},
 			{Scale::OFF,100},
-			{Scale::A4,100},
-			{Scale::OFF,100},
-			{Scale::A4,100},
-			{Scale::OFF,100*3},
+			{Scale::C5,500},
 
+			{Scale::END,0},
+	};
+	inline const Sound soft_emergency_stop[]={
+			{Scale::C5,500},
+			{Scale::OFF,100},
+			{Scale::C5,100},
+			{Scale::OFF,100},
+			{Scale::C5,500},
+
+			{Scale::END,0},
+	};
+	inline const Sound safe[]={
+			{Scale::C5,100},
+			{Scale::OFF,100},
+			{Scale::C5,100},
+
+			{Scale::END,0},
+	};
+	inline const Sound over_voltage_theme[]={
+			{Scale::C5,100},
+			{Scale::D5,100},
+			{Scale::G5,100},
+			{Scale::OFF,100},
+			{Scale::C5,100},
+			{Scale::D5,100},
+			{Scale::G5,100},
+			{Scale::END,0},
+	};
+	inline const Sound under_voltage_theme[]={
+			{Scale::G5,100},
+			{Scale::D5,100},
+			{Scale::C5,100},
+			{Scale::OFF,100},
+			{Scale::G5,100},
+			{Scale::D5,100},
+			{Scale::C5,100},
+			{Scale::END,0},
+	};
+	inline const Sound over_current_theme[]={
+			{Scale::G5,100},
+			{Scale::D5,100},
+			{Scale::C5,100},
+			{Scale::OFF,100},
+			{Scale::C5,100},
+			{Scale::D5,100},
+			{Scale::G5,100},
 			{Scale::END,0},
 	};
 

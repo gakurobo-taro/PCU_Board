@@ -57,8 +57,15 @@ namespace G24_STM32HAL::PCUBoard{
 	inline uint8_t cell_n = 6;
 	inline float voltage_limit_high = 4.3f;
 	inline float voltage_limit_low = 3.7f;
-	inline auto is_over_voltage = []()->bool{return voltage_limit_high*cell_n < get_voltage() ? true : false;};
-	inline auto is_under_voltage = []()->bool{return voltage_limit_low*cell_n > get_voltage() ? true : false;};
+
+	inline auto is_over_voltage = []()->bool{
+		if(cell_n==0){return false;}
+		return voltage_limit_high*cell_n < get_voltage() ? true : false;
+	};
+	inline auto is_under_voltage = []()->bool{
+		if(cell_n==0){return false;}
+		return voltage_limit_low*cell_n > get_voltage() ? true : false;
+	};
 
 	//current management
 	inline float current_limit = 100.0f;
@@ -83,8 +90,8 @@ namespace G24_STM32HAL::PCUBoard{
 
 	inline auto ems_trigger = EmergencyStopTrigger{};
 	inline auto set_soft_emergency_stop = [](bool state) {
-		HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_RESET:GPIO_PIN_SET);
-		HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,state?GPIO_PIN_RESET:GPIO_PIN_SET);
 	};
 	inline auto get_soft_emergency_stop = []()->bool { return HAL_GPIO_ReadPin(POWER_SD_GPIO_Port,POWER_SD_Pin)?true:false;};
 	inline auto get_emergency_stop_state = []()->bool{ return HAL_GPIO_ReadPin(EM_CHECK_GPIO_Port,EM_CHECK_Pin); };
@@ -135,7 +142,7 @@ namespace G24_STM32HAL::PCUBoard{
 
 	void init(void);
 
-	uint8_t read_board_id(void);
+	uint8_t estimate_battery_cell(void);
 
 	void soft_emergency_stop_task(void);
 
