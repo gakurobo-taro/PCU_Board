@@ -30,8 +30,10 @@ namespace G24_STM32HAL::PCUBoard{
 
 		old_pcu_state = get_pcu_state();
 
+		can.set_filter_mask(16, 0x00100000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
+		can.set_filter_mask(17, 0x00000000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
+		can.set_filter_mask(18, 0x00F00000, 0x00F00000, CommonLib::FilterMode::STD_AND_EXT, true);
 		can.start();
-		can.set_filter_free(0);
 	}
 
 	uint8_t estimate_battery_cell(void){
@@ -94,13 +96,13 @@ namespace G24_STM32HAL::PCUBoard{
 			CommonLib::DataPacket rx_data;
 			CommonLib::CanFrame rx_frame;
 			can.rx(rx_frame);
-			CommonLib::DataConvert::decode_can_frame(rx_frame, rx_data);
-
-			if(rx_data.board_ID == BOARD_ID && rx_data.data_type == CommonLib::DataType::PCU_DATA){
-				execute_pcu_command(BOARD_ID,rx_data);
-			}else if((BOARD_ID == rx_data.board_ID && rx_data.data_type == CommonLib::DataType::COMMON_DATA)
-					||(rx_data.data_type == CommonLib::DataType::COMMON_DATA_ENFORCE)){
-				execute_common_command(BOARD_ID,rx_data);
+			if(CommonLib::DataConvert::decode_can_frame(rx_frame, rx_data)){
+				if(rx_data.board_ID == BOARD_ID && rx_data.data_type == CommonLib::DataType::PCU_DATA){
+					execute_pcu_command(BOARD_ID,rx_data);
+				}else if((BOARD_ID == rx_data.board_ID && rx_data.data_type == CommonLib::DataType::COMMON_DATA)
+						||(rx_data.data_type == CommonLib::DataType::COMMON_DATA_ENFORCE)){
+					execute_common_command(BOARD_ID,rx_data);
+				}
 			}
 		}
 	}
