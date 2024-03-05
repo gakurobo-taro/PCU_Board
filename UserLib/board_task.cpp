@@ -30,9 +30,9 @@ namespace G24_STM32HAL::PCUBoard{
 
 		old_pcu_state = get_pcu_state();
 
-		can.set_filter_mask(16, 0x00100000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
-		can.set_filter_mask(17, 0x00000000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
-		can.set_filter_mask(18, 0x00F00000, 0x00F00000, CommonLib::FilterMode::STD_AND_EXT, true);
+		can.set_filter_mask(0, 0x00100000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
+		can.set_filter_mask(1, 0x00000000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
+		can.set_filter_mask(2, 0x00F00000, 0x00F00000, CommonLib::FilterMode::STD_AND_EXT, true);
 		can.start();
 	}
 
@@ -50,7 +50,7 @@ namespace G24_STM32HAL::PCUBoard{
 	}
 
 	void soft_emergency_stop_task(void){
-		if(get_pcu_state() & ems_trigger.get()){
+		if((get_pcu_state() & ems_trigger.get()) || get_soft_emergency_stop()){
 			set_soft_emergency_stop(true);
 		}else{
 			set_soft_emergency_stop(false);

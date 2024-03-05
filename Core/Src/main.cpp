@@ -157,7 +157,7 @@ int main(void)
 
 	  PCUBoard::LED_R.out_as_gpio(false);
 	  PCUBoard::LED_G.out_as_gpio(false);
-	  PCUBoard::LED_B.out_as_gpio(true);
+	  PCUBoard::LED_B.out_as_gpio(false);
 
 //	  printf("%5.3f,%x,%x\r\n",PCUBoard::get_voltage(),PCUBoard::cell_n,PCUBoard::get_pcu_state());
 //	  HAL_Delay(100);
