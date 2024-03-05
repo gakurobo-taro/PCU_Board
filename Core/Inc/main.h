@@ -30,6 +30,16 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
 
+#include "stm32f3xx_ll_rcc.h"
+#include "stm32f3xx_ll_bus.h"
+#include "stm32f3xx_ll_system.h"
+#include "stm32f3xx_ll_exti.h"
+#include "stm32f3xx_ll_cortex.h"
+#include "stm32f3xx_ll_utils.h"
+#include "stm32f3xx_ll_pwr.h"
+#include "stm32f3xx_ll_dma.h"
+#include "stm32f3xx_ll_gpio.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -47,6 +57,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+#define  USE_CAN
 
 /* USER CODE END EM */
 
@@ -72,6 +83,7 @@ void Error_Handler(void);
 #define LED_G_GPIO_Port GPIOB
 #define LED_R_Pin GPIO_PIN_7
 #define LED_R_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -81,5 +93,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
