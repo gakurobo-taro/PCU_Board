@@ -151,16 +151,17 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  PCUBoard::discharge_task();
 	  PCUBoard::soft_emergency_stop_task();
 	  PCUBoard::emergency_stop_alert_task();
 	  PCUBoard::communication_task();
 
 	  PCUBoard::LED_R.out_as_gpio(false);
 	  PCUBoard::LED_G.out_as_gpio(false);
-	  PCUBoard::LED_B.out_as_gpio(false);
+	  PCUBoard::LED_B.out_as_gpio(true);
 
-//	  printf("%5.3f,%x,%x\r\n",PCUBoard::get_voltage(),PCUBoard::cell_n,PCUBoard::get_pcu_state());
-//	  HAL_Delay(100);
+	  //printf("%5.3f,%4.3f,%x,%x\r\n",PCUBoard::get_voltage(),PCUBoard::get_current(),PCUBoard::cell_n,PCUBoard::get_pcu_state());
+	  //HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }

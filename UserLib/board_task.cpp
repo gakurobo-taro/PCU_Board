@@ -49,6 +49,14 @@ namespace G24_STM32HAL::PCUBoard{
 		return 0;
 	}
 
+	void discharge_task(void){
+		if(get_emergency_stop_state()){
+			HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,GPIO_PIN_RESET);
+		}else{
+			HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,GPIO_PIN_SET);
+		}
+	}
+
 	void soft_emergency_stop_task(void){
 		if((get_pcu_state() & ems_trigger.get()) || get_soft_emergency_stop()){
 			set_soft_emergency_stop(true);
