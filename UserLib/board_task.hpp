@@ -89,10 +89,8 @@ namespace G24_STM32HAL::PCUBoard{
 	};
 
 	inline auto ems_trigger = EmergencyStopTrigger{};
-	inline auto set_soft_emergency_stop = [](bool state) {
-		HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(DISCHARGE_GPIO_Port,DISCHARGE_Pin,state?GPIO_PIN_RESET:GPIO_PIN_SET);
-	};
+	inline auto set_soft_emergency_stop = [](bool state) { HAL_GPIO_WritePin(POWER_SD_GPIO_Port,POWER_SD_Pin,state?GPIO_PIN_SET:GPIO_PIN_RESET); };
+
 	inline auto get_soft_emergency_stop = []()->bool { return HAL_GPIO_ReadPin(POWER_SD_GPIO_Port,POWER_SD_Pin)?true:false;};
 	inline auto get_emergency_stop_state = []()->bool{ return HAL_GPIO_ReadPin(EM_CHECK_GPIO_Port,EM_CHECK_Pin); };
 
@@ -143,6 +141,8 @@ namespace G24_STM32HAL::PCUBoard{
 	void init(void);
 
 	uint8_t estimate_battery_cell(void);
+
+	void discharge_task(void);
 
 	void soft_emergency_stop_task(void);
 
