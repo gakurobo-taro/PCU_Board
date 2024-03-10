@@ -23,6 +23,7 @@ namespace G24_STM32HAL::PCULib{
 		CELL_N,
 		EX_EMS_TRG,
 		EMS_RQ,
+		COMMON_EMS_EN,
 
 		OUT_V = 0x10,
 		V_LIMIT_HIGH,

@@ -9,9 +9,7 @@
 
 namespace G24_STM32HAL::PCUBoard{
 	void init(void){
-		LED_R.start();
-		LED_G.start();
-		LED_B.start();
+		monitor_timer.set_task(PCUBoard::monitor_task);
 
 		HAL_ADCEx_Calibration_Start(&hadc1,ADC_SINGLE_ENDED);
 		HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_val, 2);
@@ -34,6 +32,18 @@ namespace G24_STM32HAL::PCUBoard{
 		can.set_filter_mask(1, 0x00000000|(BOARD_ID<<16), 0x00FF0000, CommonLib::FilterMode::STD_AND_EXT, true);
 		can.set_filter_mask(2, 0x00F00000, 0x00F00000, CommonLib::FilterMode::STD_AND_EXT, true);
 		can.start();
+
+		LED_R.start();
+		LED_G.start();
+		LED_B.start();
+
+		led_timer.set_task([](){
+			LED_R.update();
+			LED_G.update();
+			LED_B.update();
+		});
+		led_timer.set_and_start(1000);
+		LED_G.play(PCULib::ok);
 	}
 
 	uint8_t estimate_battery_cell(void){
@@ -69,6 +79,7 @@ namespace G24_STM32HAL::PCUBoard{
 		uint8_t pcu_state = get_pcu_state();
 
 		if(pcu_state != old_pcu_state){
+			LED_R.play(PCULib::error);
 			CommonLib::DataPacket tx_data;
 			tx_data.board_ID = BOARD_ID;
 			tx_data.data_type = CommonLib::DataType::PCU_DATA;
@@ -93,6 +104,23 @@ namespace G24_STM32HAL::PCUBoard{
 				buzzer.play(PCULib::SoundData::emergency_stop);
 			}else if(pcu_state==0){
 				buzzer.play(PCULib::SoundData::safe);
+			}
+
+			if(common_ems_enable){
+				CommonLib::DataPacket common_data;
+
+				common_data.board_ID = BOARD_ID;
+				common_data.data_type = CommonLib::DataType::COMMON_DATA_ENFORCE;
+				common_data.priority = 0;
+				if(get_emergency_stop_state()){
+					common_data.register_ID = (uint16_t)PCULib::CommonReg::EMERGENCY_STOP;
+				}else{
+					common_data.register_ID = (uint16_t)PCULib::CommonReg::RESET_EMERGENCY_STOP;
+				}
+
+				CommonLib::CanFrame common_frame;
+				CommonLib::DataConvert::encode_can_frame(common_data, common_frame);
+				can.tx(common_frame);
 			}
 		}
 
@@ -155,7 +183,11 @@ namespace G24_STM32HAL::PCUBoard{
 			}
 			break;
 		case PCULib::CommonReg::EMERGENCY_STOP:
-			set_soft_emergency_stop(true);
+			if(get_emergency_stop_state()){
+				//nop
+			}else{
+				set_soft_emergency_stop(true);
+			}
 			break;
 		case PCULib::CommonReg::RESET_EMERGENCY_STOP:
 			set_soft_emergency_stop(false);

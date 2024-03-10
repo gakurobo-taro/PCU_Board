@@ -66,20 +66,20 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan){
-	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::LED_B.play(PCULib::ok);
 	PCUBoard::can.tx_interrupt_task();
 }
 void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan){
-	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::LED_B.play(PCULib::ok);
 	PCUBoard::can.tx_interrupt_task();
 }
 void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan){
-	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::LED_G.play(PCULib::ok);
 	PCUBoard::can.tx_interrupt_task();
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
-	PCUBoard::LED_B.out_as_gpio(true);
+	PCUBoard::LED_G.play(PCULib::ok);
 	PCUBoard::can.rx_interrupt_task();
 }
 
@@ -88,9 +88,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (htim == PCUBoard::sound_control_timer){
     	//PCUBoard::LED_G.out_as_gpio(true);
     	PCUBoard::buzzer.timer_interrupt_task();
-	}else if(htim == PCUBoard::monitor_timer){
-		//PCUBoard::LED_R.out_as_gpio(true);
-		PCUBoard::monitor_task();
+	}else if(htim == PCUBoard::monitor_timer.get_handler()){
+		PCUBoard::monitor_timer.interrupt_task();
+	}else if(htim == PCUBoard::led_timer.get_handler()){
+		PCUBoard::led_timer.interrupt_task();
 	}
 }
 
@@ -139,6 +140,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM16_Init();
   MX_USART2_UART_Init();
+  MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
   PCUBoard::init();
 
@@ -155,10 +157,6 @@ int main(void)
 	  PCUBoard::soft_emergency_stop_task();
 	  PCUBoard::emergency_stop_alert_task();
 	  PCUBoard::communication_task();
-
-	  PCUBoard::LED_R.out_as_gpio(false);
-	  PCUBoard::LED_G.out_as_gpio(false);
-	  PCUBoard::LED_B.out_as_gpio(true);
 
 	  //printf("%5.3f,%4.3f,%x,%x\r\n",PCUBoard::get_voltage(),PCUBoard::get_current(),PCUBoard::cell_n,PCUBoard::get_pcu_state());
 	  //HAL_Delay(100);
