@@ -11,6 +11,7 @@
 #include "sound.hpp"
 #include "music_data.hpp"
 #include "board_id.hpp"
+#include "LED_pattern.hpp"
 
 #include "STM32HAL_CommonLib/can_comm.hpp"
 #include "STM32HAL_CommonLib/pwm.hpp"
@@ -18,6 +19,8 @@
 #include "STM32HAL_CommonLib/data_convert.hpp"
 #include "STM32HAL_CommonLib/serial_comm.hpp"
 #include "STM32HAL_CommonLib/id_map_control.hpp"
+#include "STM32HAL_CommonLib/timer_control.hpp"
+#include "STM32HAL_CommonLib/LED_control.hpp"
 
 #include "main.h"
 #include "can.h"
@@ -35,14 +38,15 @@ namespace G24_STM32HAL::PCUBoard{
 
 	//peripherals
 	//TIMER/PWM
-	inline auto *sound_control_timer = &htim16;
-	inline auto *monitor_timer = &htim17;
+	inline TIM_HandleTypeDef *sound_control_timer = &htim16;
+	inline auto monitor_timer = CommonLib::InterruptionTimerHard(&htim17);
+	inline auto led_timer = CommonLib::InterruptionTimerHard(&htim15);
 
-	inline auto LED_R = CommonLib::PWMHard{&htim3,TIM_CHANNEL_4};
-	inline auto LED_G = CommonLib::PWMHard{&htim3,TIM_CHANNEL_2};
-	inline auto LED_B = CommonLib::PWMHard{&htim3,TIM_CHANNEL_1};
+	inline auto LED_R = CommonLib::LEDPwm{&htim3,TIM_CHANNEL_4};
+	inline auto LED_G = CommonLib::LEDPwm{&htim3,TIM_CHANNEL_2};
+	inline auto LED_B = CommonLib::LEDPwm{&htim3,TIM_CHANNEL_1};
 
-	inline auto buzzer = PCULib::Buzzer{sound_control_timer,&htim2,TIM_CHANNEL_3};
+	inline auto buzzer = PCULib::Buzzer{&htim16,&htim2,TIM_CHANNEL_3};
 
 	//CAN
 	inline auto can = CommonLib::CanComm<4,4>(&hcan,CAN_RX_FIFO0,CAN_FILTER_FIFO0,CAN_IT_RX_FIFO0_MSG_PENDING);
@@ -103,24 +107,6 @@ namespace G24_STM32HAL::PCUBoard{
 	};
 	inline uint8_t old_pcu_state = 0;
 
-	//timer control
-	inline auto set_monitor_period = [](uint16_t val){
-		if(val == 0){
-			HAL_TIM_Base_Stop_IT(monitor_timer);
-		}else{
-			__HAL_TIM_SET_AUTORELOAD(monitor_timer,val);
-			__HAL_TIM_SET_COUNTER(monitor_timer,0);
-
-			if(HAL_TIM_Base_GetState(monitor_timer) == HAL_TIM_STATE_READY){
-				HAL_TIM_Base_Start_IT(monitor_timer);
-			}
-		}
-	};
-	inline auto get_monitor_period = []()->uint16_t{
-		if(HAL_TIM_Base_GetState(monitor_timer) == HAL_TIM_STATE_BUSY)return __HAL_TIM_GET_AUTORELOAD(monitor_timer);
-		else return 0;
-	};
-
 	//monitor
 	inline auto monitor = std::bitset<0x23>{};
 
@@ -129,16 +115,16 @@ namespace G24_STM32HAL::PCUBoard{
 
 	inline auto id_map = CommonLib::IDMapBuilder()
 			.add((uint16_t)PCULib::PCUReg::PCU_STATE,     CommonLib::DataAccessor::generate<uint8_t>(get_pcu_state))
-			.add((uint16_t)PCULib::PCUReg::EX_EMS_TRG,    CommonLib::DataAccessor::generate<uint8_t>([](uint8_t v) {ems_trigger.set(v);},[]()->uint8_t{return ems_trigger.get();}))
-			.add((uint16_t)PCULib::PCUReg::CELL_N,        CommonLib::DataAccessor::generate<uint8_t>(cell_n))
+			.add((uint16_t)PCULib::PCUReg::EX_EMS_TRG,    CommonLib::DataAccessor::generate<uint8_t>([](uint8_t v)mutable{ems_trigger.set(v);},[]()->uint8_t{return ems_trigger.get();}))
+			.add((uint16_t)PCULib::PCUReg::CELL_N,        CommonLib::DataAccessor::generate<uint8_t>(&cell_n))
 			.add((uint16_t)PCULib::PCUReg::EMS_RQ,        CommonLib::DataAccessor::generate<bool>(set_soft_emergency_stop,get_soft_emergency_stop))
-			.add((uint16_t)PCULib::PCUReg::COMMON_EMS_EN, CommonLib::DataAccessor::generate<bool>(common_ems_enable))
+			.add((uint16_t)PCULib::PCUReg::COMMON_EMS_EN, CommonLib::DataAccessor::generate<bool>(&common_ems_enable))
 			.add((uint16_t)PCULib::PCUReg::OUT_V,         CommonLib::DataAccessor::generate<float>(get_voltage))
-			.add((uint16_t)PCULib::PCUReg::V_LIMIT_HIGH,  CommonLib::DataAccessor::generate<float>(voltage_limit_high))
-			.add((uint16_t)PCULib::PCUReg::V_LIMIT_LOW,   CommonLib::DataAccessor::generate<float>(voltage_limit_low))
+			.add((uint16_t)PCULib::PCUReg::V_LIMIT_HIGH,  CommonLib::DataAccessor::generate<float>(&voltage_limit_high))
+			.add((uint16_t)PCULib::PCUReg::V_LIMIT_LOW,   CommonLib::DataAccessor::generate<float>(&voltage_limit_low))
 			.add((uint16_t)PCULib::PCUReg::OUT_I,         CommonLib::DataAccessor::generate<float>(get_current))
-			.add((uint16_t)PCULib::PCUReg::I_LIMIT,       CommonLib::DataAccessor::generate<float>(current_limit))
-			.add((uint16_t)PCULib::PCUReg::MONITOR_PERIOD,CommonLib::DataAccessor::generate<float>(set_monitor_period,get_monitor_period))
+			.add((uint16_t)PCULib::PCUReg::I_LIMIT,       CommonLib::DataAccessor::generate<float>(&current_limit))
+			.add((uint16_t)PCULib::PCUReg::MONITOR_PERIOD,CommonLib::DataAccessor::generate<uint16_t>([](uint16_t p)mutable{monitor_timer.set_and_start(p);},[]()->uint16_t{monitor_timer.get_state();}))
 			.add((uint16_t)PCULib::PCUReg::MONITOR_REG,   CommonLib::DataAccessor::generate<uint64_t>([](uint64_t val){ monitor = std::bitset<0x23>{val};}, []()->uint64_t{ return monitor.to_ullong();}))
 			.build();
 
