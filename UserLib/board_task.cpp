@@ -94,6 +94,23 @@ namespace G24_STM32HAL::PCUBoard{
 			}else if(pcu_state==0){
 				buzzer.play(PCULib::SoundData::safe);
 			}
+
+			if(common_ems_enable){
+				CommonLib::DataPacket common_data;
+
+				common_data.board_ID = BOARD_ID;
+				common_data.data_type = CommonLib::DataType::COMMON_DATA_ENFORCE;
+				common_data.priority = 0;
+				if(get_emergency_stop_state()){
+					common_data.register_ID = (uint16_t)PCULib::CommonReg::EMERGENCY_STOP;
+				}else{
+					common_data.register_ID = (uint16_t)PCULib::CommonReg::RESET_EMERGENCY_STOP;
+				}
+
+				CommonLib::CanFrame common_frame;
+				CommonLib::DataConvert::encode_can_frame(common_data, common_frame);
+				can.tx(common_frame);
+			}
 		}
 
 		old_pcu_state = pcu_state;
@@ -155,7 +172,11 @@ namespace G24_STM32HAL::PCUBoard{
 			}
 			break;
 		case PCULib::CommonReg::EMERGENCY_STOP:
-			set_soft_emergency_stop(true);
+			if(get_emergency_stop_state()){
+				//nop
+			}else{
+				set_soft_emergency_stop(true);
+			}
 			break;
 		case PCULib::CommonReg::RESET_EMERGENCY_STOP:
 			set_soft_emergency_stop(false);

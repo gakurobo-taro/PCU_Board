@@ -124,11 +124,15 @@ namespace G24_STM32HAL::PCUBoard{
 	//monitor
 	inline auto monitor = std::bitset<0x23>{};
 
+	//共通コマンドによる非常停止コマンド発報は有効か
+	inline bool common_ems_enable = true;
+
 	inline auto id_map = CommonLib::IDMapBuilder()
 			.add((uint16_t)PCULib::PCUReg::PCU_STATE,     CommonLib::DataAccessor::generate<uint8_t>(get_pcu_state))
 			.add((uint16_t)PCULib::PCUReg::EX_EMS_TRG,    CommonLib::DataAccessor::generate<uint8_t>([](uint8_t v) {ems_trigger.set(v);},[]()->uint8_t{return ems_trigger.get();}))
 			.add((uint16_t)PCULib::PCUReg::CELL_N,        CommonLib::DataAccessor::generate<uint8_t>(cell_n))
 			.add((uint16_t)PCULib::PCUReg::EMS_RQ,        CommonLib::DataAccessor::generate<bool>(set_soft_emergency_stop,get_soft_emergency_stop))
+			.add((uint16_t)PCULib::PCUReg::COMMON_EMS_EN, CommonLib::DataAccessor::generate<bool>(common_ems_enable))
 			.add((uint16_t)PCULib::PCUReg::OUT_V,         CommonLib::DataAccessor::generate<float>(get_voltage))
 			.add((uint16_t)PCULib::PCUReg::V_LIMIT_HIGH,  CommonLib::DataAccessor::generate<float>(voltage_limit_high))
 			.add((uint16_t)PCULib::PCUReg::V_LIMIT_LOW,   CommonLib::DataAccessor::generate<float>(voltage_limit_low))
