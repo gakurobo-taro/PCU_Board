@@ -112,6 +112,7 @@ namespace G24_STM32HAL::PCUBoard{
 				common_data.board_ID = BOARD_ID;
 				common_data.data_type = CommonLib::DataType::COMMON_DATA_ENFORCE;
 				common_data.priority = 0;
+
 				if(get_emergency_stop_state()){
 					common_data.register_ID = (uint16_t)PCULib::CommonReg::EMERGENCY_STOP;
 				}else{
@@ -146,7 +147,7 @@ namespace G24_STM32HAL::PCUBoard{
 		if(rx_data.is_request){
 			CommonLib::CanFrame tx_frame;
 			CommonLib::DataPacket tx_data;
-			auto writer = tx_frame.writer();
+			auto writer = tx_data.writer();
 
 			if(id_map.get(rx_data.register_ID, writer)){
 				tx_data.board_ID = board_id;
