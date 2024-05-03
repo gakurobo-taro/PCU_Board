@@ -49,7 +49,7 @@ namespace G24_STM32HAL::PCUBoard{
 	inline auto buzzer = PCULib::Buzzer{&htim16,&htim2,TIM_CHANNEL_3};
 
 	//CAN
-	inline auto can = CommonLib::CanComm<4,4>(&hcan,CAN_RX_FIFO0,CAN_FILTER_FIFO0,CAN_IT_RX_FIFO0_MSG_PENDING);
+	inline auto can = CommonLib::CanComm{&hcan,std::make_unique<CommonLib::RingBuffer<CommonLib::CanFrame,4>>(),std::make_unique<CommonLib::RingBuffer<CommonLib::CanFrame,4>>(),CAN_RX_FIFO0,CAN_FILTER_FIFO0,CAN_IT_RX_FIFO0_MSG_PENDING};
 
 	//ADC
 	inline uint16_t adc_val[2] = {0};
@@ -60,7 +60,7 @@ namespace G24_STM32HAL::PCUBoard{
 	//battery management
 	inline uint8_t cell_n = 6;
 	inline float voltage_limit_high = 4.3f;
-	inline float voltage_limit_low = 3.7f;
+	inline float voltage_limit_low = 3.5f;
 
 	inline auto is_over_voltage = []()->bool{
 		if(cell_n==0){return false;}
@@ -72,7 +72,7 @@ namespace G24_STM32HAL::PCUBoard{
 	};
 
 	//current management
-	inline float current_limit = 100.0f;
+	inline float current_limit = 150.0f;
 	inline auto is_over_current = []()->bool{return current_limit < std::abs(get_current()) ? true:false;};
 
 	//emergency stop management

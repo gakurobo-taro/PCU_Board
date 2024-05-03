@@ -92,21 +92,23 @@ namespace G24_STM32HAL::PCUBoard{
 			CommonLib::DataConvert::encode_can_frame(tx_data, tx_frame);
 			can.tx(tx_frame);
 
-			if(is_over_voltage()){
-				buzzer.play(PCULib::SoundData::over_voltage_theme);
-			}else if(is_under_voltage()){
-				buzzer.play(PCULib::SoundData::under_voltage_theme);
-			}else if(is_over_current()){
-				buzzer.play(PCULib::SoundData::over_current_theme);
-			}else if(get_soft_emergency_stop()){
-				buzzer.play(PCULib::SoundData::soft_emergency_stop);
-			}else if(get_emergency_stop_state()){
-				buzzer.play(PCULib::SoundData::emergency_stop);
-			}else if(pcu_state==0){
-				buzzer.play(PCULib::SoundData::safe);
+			if(not buzzer.is_playing()){
+				if(is_over_voltage()){
+					buzzer.play(PCULib::SoundData::over_voltage_theme);
+				}else if(is_under_voltage()){
+					buzzer.play(PCULib::SoundData::under_voltage_theme);
+				}else if(is_over_current()){
+					buzzer.play(PCULib::SoundData::over_current_theme);
+				}else if(get_soft_emergency_stop()){
+					buzzer.play(PCULib::SoundData::soft_emergency_stop);
+				}else if(get_emergency_stop_state()){
+					buzzer.play(PCULib::SoundData::emergency_stop);
+				}else if(pcu_state==0){
+					buzzer.play(PCULib::SoundData::safe);
+				}
 			}
 
-			if(common_ems_enable){
+			if(common_ems_enable && ((pcu_state&0b1) != (old_pcu_state&0b1))){
 				CommonLib::DataPacket common_data;
 
 				common_data.board_ID = BOARD_ID;
